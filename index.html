@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lie's Catering</title>
+</head>
+<body>
+    <div class="canvas">
+        <canvas id="myCanvas">
+
+        </canvas>
+    </div>
+    <div class="button-input" onclick="hideshowmodal()">
+        Input
+    </div>
+    <div class=" modal hidden">
+        <div class="modal-content">
+            <div class="input-jumlah">
+                <label for="">Input Jumlah Makanan</label>
+                <br>
+                <input type="text" id="jumlah-1">
+                <br>
+                <input type="text" id="jumlah-2">
+                <br>
+                <input type="text" id="jumlah-3">
+                <br>
+                <input type="text" id="jumlah-4">
+                <br>
+                <input type="text" id="jumlah-5">
+                <br>
+                <input type="text" id="jumlah-6">
+                <br>
+                <input type="text" id="jumlah-7">
+                <br><br>
+            </div>
+            <div class="input-profit">
+                <label for="">Input Profit</label>
+                <br>
+                <input type="text" id="profit-1">
+                <br>
+                <input type="text" id="profit-2">
+                <br>
+                <input type="text" id="profit-3">
+                <br>
+                <input type="text" id="profit-4">
+                <br>
+                <input type="text" id="profit-5">
+                <br>
+                <input type="text" id="profit-6">
+                <br>
+                <input type="text" id="profit-7">
+                <br><br>
+            </div>
+            <label for="">Input Maximum Jumlah Makanan</label>
+            <br>
+            <input type="text" id="max-jumlah">
+            <br><br>
+            <button id="lihat" onclick="start()">Lihat</button>
+        <span class="close" onclick="hideshowmodal()">&times;</span>
+        </div>
+    </div>
+</body>
+
+<script>
+    let koordinats = [[765, 435],[742.5, 484], [814, 604],[896.5, 555],[896, 653],[874, 920],[1186, 915]];
+    let distances = [
+        [0, 1.4 ,7.6 ,2.3 ,3.9 ,3.5 ,9],
+        [1.4 ,0 ,9.8 ,2.3 ,3.9 ,3.5 ,9],
+        [8.3 ,6.9, 0 ,6.1 ,5.8 ,4.2 ,4.7],
+        [3.8 ,3.9 ,5.3 ,0 ,1.6 ,1.1 ,6.7],
+        [2.9 ,4.5 ,5.9 ,1.4 ,0 ,1.7 ,7.2],
+        [5.5 ,4.2 ,4.2 ,3.3 ,1.6 ,0 ,5.6],
+        [9.8 ,8.4 ,5.4 ,7.6 ,7.3 ,5.7 ,0],
+    ];
+    let jumlah_makanan = [0, 5, 3, 1, 4, 3, 2];
+    let maximum_jumlah = 20;
+    let profit_makanan = [0, 50000, 30000, 10000, 40000, 30000, 20000];
+
+        let c = document.getElementById("myCanvas");
+        let scale = 0.4;
+        let ctx = c.getContext("2d");
+        let img = new Image();
+        img.src = "peta.jpeg";
+        img.onload = ()=>{
+            c.width = img.width*scale;
+            c.height = img.height*scale;
+            ctx.drawImage(img, 0, 0, img.width*scale, img.height*scale);
+            
+            for (let index = 0; index < koordinats.length; index++) {
+                koordinat(index);
+            }
+            garis_koordinat(0,1);
+            let path = greedyTSP();
+            console.log("Optimal path:", path);
+            for (let index = 0; index < path.length-1; index++) {
+                garis_koordinat(path[index], path[index+1]);
+            }
+        }
+    
+    function koordinat(lokasi) {
+        ctx.beginPath();
+        ctx.arc(koordinats[lokasi][0],koordinats[lokasi][1], 10, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+
+    function garis_koordinat(lokasi1, lokasi2) {
+        ctx.moveTo(koordinats[lokasi1][0],koordinats[lokasi1][1]);
+        ctx.lineTo(koordinats[lokasi2][0],koordinats[lokasi2][1]);
+        ctx.stroke();
+    }
+
+    function greedyTSP() {
+        let n = koordinats.length;
+        let visited = new Array(n).fill(false);
+        let path = [];
+        let current = 0;
+        let sum_jumlah_makanan = 0;
+        let sum_profit_makanan = 0;
+
+        visited[current] = true;
+        path.push(current);
+
+        for (let i = 0; i < n - 1; i++) {
+            let next = getNextCity(current, visited);
+            if (next != -1) {
+                visited[next] = true;
+                if (sum_jumlah_makanan + jumlah_makanan[next] <= maximum_jumlah) {
+                    path.push(next);
+                    current = next;
+                    sum_jumlah_makanan += jumlah_makanan[next];
+                    sum_profit_makanan += profit_makanan[next];
+                }
+            }
+        }
+        path.push(0);
+        return {path, sum_jumlah_makanan, sum_profit_makanan};
+    }
+
+    function getNextCity(current, visited) {
+        let next = -1;
+        let minDistance = Infinity;
+
+        for (let i = 0; i < koordinats.length; i++) {
+            if (!visited[i] && distances[current][i] < minDistance) {
+                minDistance = distances[current][i];
+                next = i;
+            }
+        }
+        return next;
+    }
+
+    function hideshowmodal() {
+        const modal = document.querySelector('.modal');
+        modal.classList.toggle('hidden');
+    }
+
+    function setProfit() {
+        let newProfit = [];
+        document.querySelectorAll('.input-profit input').forEach(Element => {
+            newProfit.push(parseInt(Element.value));
+        });
+        profit_makanan = newProfit;
+    }
+
+    function setJumlah() {
+        let newJumlah = [];
+        document.querySelectorAll('.input-jumlah input').forEach(Element => {
+            newJumlah.push(parseInt(Element.value));
+        });
+        jumlah_makanan = newJumlah;
+    }
+
+    function setMaximum() {
+        maximum_jumlah = parseInt(document.querySelector('#max-jumlah').value);
+        console.log(maximum_jumlah);
+    }
+
+    function rendervalue() {
+        document.querySelectorAll('.input-profit input').forEach((Element, index) => {
+            Element.value = profit_makanan[index];
+        });
+        document.querySelectorAll('.input-jumlah input').forEach((Element, index) => {
+            Element.value = jumlah_makanan[index];
+        });
+        document.querySelector('#max-jumlah').value = maximum_jumlah;
+    }
+    rendervalue();
+
+    function rendermap() {
+        c.width = img.width*scale;
+        c.height = img.height*scale;
+        ctx.drawImage(img, 0, 0, img.width*scale, img.height*scale);
+        
+        for (let index = 0; index < koordinats.length; index++) {
+            koordinat(index);
+        }
+        garis_koordinat(0,1);
+        let result = greedyTSP();
+        console.log("Optimal result:", result.path);
+        for (let index = 0; index < result.path.length-1; index++) {
+            garis_koordinat(result.path[index], result.path[index+1]);
+        }
+    }
+    
+    function start() {
+        setJumlah();
+        setProfit();
+        setMaximum();
+        rendermap();
+        document.querySelector('.modal').classList.toggle('hidden');
+    }
+
+</script>
+</html>
+
